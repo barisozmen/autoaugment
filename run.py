@@ -1,3 +1,15 @@
+# (C) 2018 Ricardo Cruz <ricardo.pdm.cruz@gmail.com>
+
+import argparse, sys
+parser = argparse.ArgumentParser()
+parser.add_argument('dataset')
+parser.add_argument('controller_epochs', type=int)
+parser.add_argument('--reduced', action='store_true')
+parser.add_argument('--child-epochs', default=120, type=int)
+parser.add_argument('--child-batch-size', default=128, type=int)
+args = parser.parse_args()
+
+# tell tensorflow to not use all resources
 import tensorflow as tf
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -14,23 +26,18 @@ import time
 # CIFAR-10, CIFAR-100, SVHN, and ImageNet
 # SVHN = http://ufldl.stanford.edu/housenumbers/
 
-def get_dataset(dataset, reduced):
-    if dataset == 'cifar10':
-        (Xtr, ytr), (Xts, yts) = datasets.cifar10.load_data()
-    elif dataset == 'cifar100':
-        (Xtr, ytr), (Xts, yts) = datasets.cifar100.load_data()
-    else:
-        raise Exception('Unknown dataset %s' % dataset)
-    if reduced:
-        ix = np.random.choice(len(Xtr), 4000, False)
-        Xtr = Xtr[ix]
-        ytr = ytr[ix]
-    ytr = utils.to_categorical(ytr)
-    yts = utils.to_categorical(yts)
-    return (Xtr, ytr), (Xts, yts)
+if hasattr(datasets, args.dataset):
+    (Xtr, ytr), (Xts, yts) = getattr(datasets, args.dataset).load_data()
+else:
+    sys.exit('Unknown dataset %s' % dataset)
+if args.reduced:
+    ix = np.random.choice(len(Xtr), 4000, False)
+    Xtr = Xtr[ix]
+    ytr = ytr[ix]
 
-(Xtr, ytr), (Xts, yts) = get_dataset('cifar10', True)
-transformations = get_transformations(Xtr)
+# we don't normalize the data because that is done during data augmentation
+ytr = utils.to_categorical(ytr)
+yts = utils.to_categorical(yts)
 
 # Experiment parameters
 
@@ -44,7 +51,7 @@ OP_PROBS = 11
 OP_MAGNITUDES = 10
 
 CHILD_BATCH_SIZE = 128
-CHILD_BATCHES = len(Xtr) // CHILD_BATCH_SIZE
+CHILD_BATCHES = len(Xtr) // args.child_batch_size
 CHILD_EPOCHS = 120
 CONTROLLER_EPOCHS = 500 # 15000 or 20000
 
@@ -53,6 +60,7 @@ class Operation:
         # Ekin Dogus says he sampled the softmaxes, and has not used argmax
         # We might still want to use argmax=True for the last predictions, to ensure
         # the best solutions are chosen and make it deterministic.
+        transformations = get_transformations(Xtr)
         if argmax:
             self.type = types_softmax.argmax()
             t = transformations[self.type]
@@ -160,7 +168,7 @@ def autoaugment(subpolicies, X, y):
         ix = np.arange(len(X))
         np.random.shuffle(ix)
         for i in range(CHILD_BATCHES):
-            _ix = ix[i*CHILD_BATCH_SIZE:(i+1)*CHILD_BATCH_SIZE]
+            _ix = ix[i*args.child_batch_size:(i+1)*args.child_batch_size]
             _X = X[_ix]
             _y = y[_ix]
             subpolicy = np.random.choice(subpolicies)
@@ -190,7 +198,7 @@ class Child:
     def fit(self, subpolicies, X, y):
         gen = autoaugment(subpolicies, X, y)
         self.model.fit_generator(
-            gen, CHILD_BATCHES, CHILD_EPOCHS, verbose=0, use_multiprocessing=True)
+            gen, CHILD_BATCHES, args.child_epochs, verbose=0, use_multiprocessing=True)
         return self
 
     def evaluate(self, X, y):
@@ -201,8 +209,8 @@ mem_accuracies = []
 
 controller = Controller()
 
-for epoch in range(CONTROLLER_EPOCHS):
-    print('Controller: Epoch %d / %d' % (epoch+1, CONTROLLER_EPOCHS))
+for epoch in range(args.controller_epochs):
+    print('Controller: Epoch %d / %d' % (epoch+1, args.controller_epochs))
 
     softmaxes, subpolicies = controller.predict(SUBPOLICIES)
     for i, subpolicy in enumerate(subpolicies):
@@ -219,7 +227,7 @@ for epoch in range(CONTROLLER_EPOCHS):
     mem_accuracies.append(accuracy)
 
     if len(mem_softmaxes) > 5:
-        # ricardo: I let some epochs pass, so that the normalization is more robust
+        # maybe better to let some epochs pass, so that the normalization is more robust
         controller.fit(mem_softmaxes, mem_accuracies)
     print()
 
