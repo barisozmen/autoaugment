@@ -15,4 +15,4 @@ The **controller** is trained in order to maximize the derivative of its outputs
 
 All this is implemented in the `fit()` function which can be found inside each class.
 
-*Disclaimer:* I am unsure whether the code resembles that of the authors. I have used a lot of information [from this other paper](https://arxiv.org/abs/1707.07012), which is the main citation from AutoAugment.
+*Disclaimer:* I am unsure how faithful the code is to the paper. I have used a lot of information [from this other paper](https://arxiv.org/abs/1707.07012) (Neural Architecture Search), which is the main citation from AutoAugment. I have since been told that code [is published here](https://github.com/titu1994/neural-architecture-search). You might want to have a look at it as well.
