@@ -9,11 +9,11 @@ class Child:
 
     def fit(self, gen, nbatches):
         self.model.fit_generator(
-            gen, nbatches, self.epochs, verbose=0, use_multiprocessing=True)
+            gen, nbatches, self.epochs, verbose=2, use_multiprocessing=True)
         return self
 
     def evaluate(self, X, y):
-        return self.model.evaluate(X, y, verbose=0)[1]
+        return self.model.evaluate(X, y, verbose=2)[1]
 
 def create_simple_conv(input_shape):
     x = input_layer = layers.Input(shape=input_shape)
