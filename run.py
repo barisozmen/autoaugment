@@ -56,11 +56,14 @@ for epoch in range(args.controller_epochs):
         print(subpolicy)
     mem_softmaxes.append(softmaxes)
 
+    print("Creating child model ...")
     child_model = mychild.create_simple_conv(Xtr.shape[1:])
     child = mychild.Child(child_model, args.child_batch_size, args.child_epochs)
 
+    print("running mycontroller.autoaugment ...")
     tic = time.time()
     aug = mycontroller.autoaugment(subpolicies, Xtr, ytr, child.batch_size)
+    print("fitting child model ...")
     child.fit(aug, len(Xtr) // child.batch_size)
     toc = time.time()
 
@@ -76,7 +79,7 @@ for epoch in range(args.controller_epochs):
 print()
 print('Best policies found:')
 print()
-_, subpolicies = controller.predict(25, Xtr)
+_, subpolicies = controller.predict(mycontroller.SUBPOLICIES, Xtr)
 for i, subpolicy in enumerate(subpolicies):
     print('# Subpolicy %d' % (i+1))
     print(subpolicy)
