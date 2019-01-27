@@ -74,7 +74,7 @@ for epoch in range(args.controller_epochs):
     tic = time.time()
     aug = mycontroller.autoaugment(subpolicies, Xtr, ytr, child.batch_size)
     print("fitting child model ...")
-    child.fit(aug, len(Xtr) // child.batch_size)
+    child.fit(aug, len(Xtr) // child.batch_size, Xts, yts)
     toc = time.time()
 
     accuracy = child.evaluate(Xts, yts)

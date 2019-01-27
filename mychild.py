@@ -7,9 +7,13 @@ class Child:
         self.batch_size = batch_size
         self.epochs = epochs
 
-    def fit(self, gen, nbatches):
+    def fit(self, gen, nbatches, val_X, val_Y):
         self.model.fit_generator(
-            gen, nbatches, self.epochs, verbose=2, use_multiprocessing=True)
+            gen, nbatches, self.epochs,
+            verbose=2,
+            use_multiprocessing=True,
+            validation_data=[val_X, val_Y]
+        )
         return self
 
     def evaluate(self, X, y):
