@@ -27,7 +27,7 @@ import tensorflow as tf
 # tell tensorflow to not use all resources
 # config = tf.ConfigProto()
 # config.gpu_options.allow_growth = True
-session = tf.Session(config=config) # session = tf.Session(config=config)
+session = tf.Session() # session = tf.Session(config=config)
 
 from keras import datasets, utils, backend
 backend.set_session(session)
@@ -35,7 +35,14 @@ import numpy as np
 import time
 import pickle
 import logging
-logging.basicConfig(filename=f'./reports/experiment_logs/{EXPERIMENT_NAME}.log',level=logging.DEBUG)
+if not os.path.exists("./reports/"):
+    os.mkdir("./reports")
+if not os.path.exists("./reports/experiments"):
+    os.mkdir("./reports/experiments")
+EXPERIMENT_LOG_FOLDER = f"reports/experiments/{EXPERIMENT_NAME}"
+os.mkdir(EXPERIMENT_LOG_FOLDER)
+logging.basicConfig(filename=f'./{EXPERIMENT_LOG_FOLDER}/info.log',level=logging.DEBUG)
+
 
 
 # datasets in the AutoAugment paper:
@@ -94,9 +101,12 @@ for epoch in range(args.controller_epochs):
     history_child = child.fit(aug, len(Xtr) // child.batch_size, Xts, yts)
     toc = time.time()
 
-    pd.DataFrame(history_child.history).to_csv(f"reports/experiment_logs/{EXPERIMENT_NAME}.epoch{epoch}.csv")
-    val_acc_history = history_child.history["val_acc"]
-    max_val_acc = round(max(val_acc_history), 3)
+    history_df = pd.DataFrame(history_child.history)
+    history_df = history_df.round(3)
+
+    # report child model history
+    pd.DataFrame(history_df).to_csv(f"./{EXPERIMENT_LOG_FOLDER}/epoch{epoch}.child_history.csv")
+    max_val_acc = history_df["val_acc"].max()
 
     logging.info('-> Child max validation accuracy: %.3f (elaspsed time: %ds)' % (max_val_acc, (toc-tic)))
     mem_accuracies.append(max_val_acc)
@@ -106,24 +116,18 @@ for epoch in range(args.controller_epochs):
         controller.fit(mem_softmaxes, mem_accuracies)
     logging.info("-")
 
+    # report best policies of the epoch
+    max_val_acc_str = str(max_val_acc).replace("0.", "")
+    epoch_best_policies = []
+    for i, subpolicy in enumerate(subpolicies):
+        epoch_best_policies.append(str(subpolicy))
+    report_file_path = f"./{EXPERIMENT_LOG_FOLDER}/epoch{epoch}.max_val_acc_{max_val_acc_str}.best_policies.csv"
+    pd.DataFrame(epoch_best_policies).to_csv(report_file_path, index=False)
+
+
     if epoch%REPORT_PERIOD==0:
-        logging.info ("Writing periodic report ...")
-        epoch_best_policies = []
-        for i, subpolicy in enumerate(subpolicies):
-            epoch_best_policies.append(str(subpolicy))
-
-        best_policy_report[epoch] = {
-            "best_policies" : epoch_best_policies,
-            "best_validation_accuracy" : max_val_acc
-        }
-
-        max_val_acc_str = str(max_val_acc).replace("0.","")
-        report_file_path = f"./reports/best_policies/experiment{EXPERIMENT_NAME}.epoch{epoch}.max_val_acc_{max_val_acc_str}.best_policies.pkl"
-        with open(report_file_path, 'wb') as f:
-            pickle.dump(best_policy_report, f)
-
         controller.model.save_weights(
-            f"./reports/controller_weights/experiment{EXPERIMENT_NAME}.epoch{epoch}.max_val_acc_{max_val_acc_str}.controller_weights.h5",
+            f"./{EXPERIMENT_LOG_FOLDER}/epoch{epoch}.controller_weights.h5",
             overwrite=True
         )
 
