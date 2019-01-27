@@ -22,10 +22,14 @@ from keras import datasets, utils, backend
 backend.set_session(session)
 import numpy as np
 import time
+import pickle
+import datetime
 
 # datasets in the AutoAugment paper:
 # CIFAR-10, CIFAR-100, SVHN, and ImageNet
 # SVHN = http://ufldl.stanford.edu/housenumbers/
+now = datetime.datetime.now()
+EXPERIMENT_NAME = f"{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}"
 
 if hasattr(datasets, args.dataset):
     (Xtr, ytr), (Xts, yts) = getattr(datasets, args.dataset).load_data()
@@ -40,8 +44,12 @@ if args.reduced:
 ytr = utils.to_categorical(ytr)
 yts = utils.to_categorical(yts)
 
-# Experiment parameters
+# give best policies report for each REPORT_PERIOD epochs of the controller
+REPORT_PERIOD = 10
+best_policy_report = {}
 
+
+# Experiment parameters
 import mycontroller, mychild
 controller = mycontroller.Controller()
 mem_softmaxes = []
@@ -75,6 +83,22 @@ for epoch in range(args.controller_epochs):
         # maybe better to let some epochs pass, so that the normalization is more robust
         controller.fit(mem_softmaxes, mem_accuracies)
     print()
+
+    if epoch%REPORT_PERIOD==0:
+        print ("Writing periodic report ...")
+        epoch_best_policies = []
+        for i, subpolicy in enumerate(subpolicies):
+            epoch_best_policies.append(str(subpolicy))
+
+        best_policy_report[epoch] = {
+            "best_policies" : epoch_best_policies,
+            "test_accuracy" : accuracy
+        }
+
+        report_file_path = f"./reports/best_policies/experiment.{EXPERIMENT_NAME}.epoch{epoch}.pkl"
+        with open(report_file_path, 'wb') as f:
+            pickle.dump(best_policy_report, f)
+
 
 print()
 print('Best policies found:')
