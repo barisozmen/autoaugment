@@ -47,6 +47,11 @@ ix = np.random.choice(len(Xtr), args.reduce_to, False)
 Xtr = Xtr[ix]
 ytr = ytr[ix]
 
+# reduce validation dataset
+iy = np.random.choice(len(Xts), VALIDATION_SET_SIZE, False)
+Xts = Xts[iy]
+yts = yts[iy]
+
 # we don't normalize the data because that is done during data augmentation
 ytr = utils.to_categorical(ytr)
 yts = utils.to_categorical(yts)
