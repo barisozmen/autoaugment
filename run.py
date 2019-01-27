@@ -25,9 +25,9 @@ import pandas as pd
 
 import tensorflow as tf
 # tell tensorflow to not use all resources
-# config = tf.ConfigProto()
-# config.gpu_options.allow_growth = True
-session = tf.Session() # session = tf.Session(config=config)
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config)
 
 from keras import datasets, utils, backend
 backend.set_session(session)
