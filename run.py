@@ -45,7 +45,7 @@ ytr = utils.to_categorical(ytr)
 yts = utils.to_categorical(yts)
 
 # give best policies report for each REPORT_PERIOD epochs of the controller
-REPORT_PERIOD = 1
+REPORT_PERIOD = 20
 best_policy_report = {}
 
 
