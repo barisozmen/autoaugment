@@ -1,0 +1,2 @@
+experiment started from command line:
+python3 run.py cifar10 10000 --reduce-to 1000 --child-epochs 120 --child-batch-size 128 --report-period 20
