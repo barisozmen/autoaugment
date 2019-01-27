@@ -82,12 +82,14 @@ for epoch in range(args.controller_epochs):
     tic = time.time()
     aug = mycontroller.autoaugment(subpolicies, Xtr, ytr, child.batch_size)
     print("fitting child model ...")
-    child.fit(aug, len(Xtr) // child.batch_size, Xts, yts)
+    history_child = child.fit(aug, len(Xtr) // child.batch_size, Xts, yts)
     toc = time.time()
 
-    accuracy = child.evaluate(Xts, yts)
-    print('-> Child accuracy: %.3f (elaspsed time: %ds)' % (accuracy, (toc-tic)))
-    mem_accuracies.append(accuracy)
+    val_acc_history = history_child.history["val_acc"]
+    max_val_acc = round(max(val_acc_history), 3)
+
+    print('-> Child accuracy: %.3f (elaspsed time: %ds)' % (max_val_acc, (toc-tic)))
+    mem_accuracies.append(max_val_acc)
 
     if len(mem_softmaxes) > 5:
         # maybe better to let some epochs pass, so that the normalization is more robust
@@ -102,7 +104,7 @@ for epoch in range(args.controller_epochs):
 
         best_policy_report[epoch] = {
             "best_policies" : epoch_best_policies,
-            "test_accuracy" : accuracy
+            "best_validation_accuracy" : max_val_acc
         }
 
         report_file_path = f"./reports/best_policies/experiment{EXPERIMENT_NAME}.epoch{epoch}.best_policies.pkl"
