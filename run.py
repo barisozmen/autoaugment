@@ -88,7 +88,7 @@ for epoch in range(args.controller_epochs):
     val_acc_history = history_child.history["val_acc"]
     max_val_acc = round(max(val_acc_history), 3)
 
-    print('-> Child accuracy: %.3f (elaspsed time: %ds)' % (max_val_acc, (toc-tic)))
+    print('-> Child max validation accuracy: %.3f (elaspsed time: %ds)' % (max_val_acc, (toc-tic)))
     mem_accuracies.append(max_val_acc)
 
     if len(mem_softmaxes) > 5:
@@ -107,12 +107,13 @@ for epoch in range(args.controller_epochs):
             "best_validation_accuracy" : max_val_acc
         }
 
-        report_file_path = f"./reports/best_policies/experiment{EXPERIMENT_NAME}.epoch{epoch}.best_policies.pkl"
+        max_val_acc_str = str(max_val_acc).replace("0.","")
+        report_file_path = f"./reports/best_policies/experiment{EXPERIMENT_NAME}.epoch{epoch}.max_val_acc_{max_val_acc_str}.best_policies.pkl"
         with open(report_file_path, 'wb') as f:
             pickle.dump(best_policy_report, f)
 
         controller.model.save_weights(
-            f"./reports/controller_weights/experiment{EXPERIMENT_NAME}.epoch{epoch}.controller_weights.h5",
+            f"./reports/controller_weights/experiment{EXPERIMENT_NAME}.epoch{epoch}.max_val_acc_{max_val_acc_str}.controller_weights.h5",
             overwrite=True
         )
 
