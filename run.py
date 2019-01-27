@@ -30,6 +30,9 @@ import datetime
 # SVHN = http://ufldl.stanford.edu/housenumbers/
 now = datetime.datetime.now()
 EXPERIMENT_NAME = f"{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}"
+# give best policies report for each REPORT_PERIOD epochs of the controller
+REPORT_PERIOD = 20
+best_policy_report = {}
 
 if hasattr(datasets, args.dataset):
     (Xtr, ytr), (Xts, yts) = getattr(datasets, args.dataset).load_data()
@@ -44,9 +47,7 @@ if args.reduced:
 ytr = utils.to_categorical(ytr)
 yts = utils.to_categorical(yts)
 
-# give best policies report for each REPORT_PERIOD epochs of the controller
-REPORT_PERIOD = 20
-best_policy_report = {}
+
 
 
 # Experiment parameters
