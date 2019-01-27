@@ -45,7 +45,7 @@ ytr = utils.to_categorical(ytr)
 yts = utils.to_categorical(yts)
 
 # give best policies report for each REPORT_PERIOD epochs of the controller
-REPORT_PERIOD = 10
+REPORT_PERIOD = 1
 best_policy_report = {}
 
 
@@ -95,9 +95,14 @@ for epoch in range(args.controller_epochs):
             "test_accuracy" : accuracy
         }
 
-        report_file_path = f"./reports/best_policies/experiment.{EXPERIMENT_NAME}.epoch{epoch}.pkl"
+        report_file_path = f"./reports/best_policies/experiment{EXPERIMENT_NAME}.epoch{epoch}.best_policies.pkl"
         with open(report_file_path, 'wb') as f:
             pickle.dump(best_policy_report, f)
+
+        controller.model.save_weights(
+            f"./reports/controller_weights/experiment{EXPERIMENT_NAME}.epoch{epoch}.controller_weights.h5",
+            overwrite=True
+        )
 
 
 print()
