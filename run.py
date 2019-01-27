@@ -4,7 +4,7 @@ import argparse, sys
 parser = argparse.ArgumentParser()
 parser.add_argument('dataset')
 parser.add_argument('controller_epochs', type=int)
-parser.add_argument('--reduced', action='store_true')
+parser.add_argument('--reduce-to', default=4000, type=int)
 parser.add_argument('--child-epochs', default=120, type=int)
 parser.add_argument('--child-batch-size', default=128, type=int)
 parser.add_argument('--report-period', default=20, type=int)
@@ -34,15 +34,18 @@ EXPERIMENT_NAME = f"{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}"
 # give best policies report for each REPORT_PERIOD epochs of the controller
 REPORT_PERIOD = args.report_period
 best_policy_report = {}
+VALIDATION_SET_SIZE = 1000
+
 
 if hasattr(datasets, args.dataset):
     (Xtr, ytr), (Xts, yts) = getattr(datasets, args.dataset).load_data()
 else:
     sys.exit('Unknown dataset %s' % dataset)
-if args.reduced:
-    ix = np.random.choice(len(Xtr), 4000, False)
-    Xtr = Xtr[ix]
-    ytr = ytr[ix]
+
+# reduce training dataset
+ix = np.random.choice(len(Xtr), args.reduce_to, False)
+Xtr = Xtr[ix]
+ytr = ytr[ix]
 
 # we don't normalize the data because that is done during data augmentation
 ytr = utils.to_categorical(ytr)
