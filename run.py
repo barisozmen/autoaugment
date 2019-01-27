@@ -44,14 +44,9 @@ os.mkdir(EXPERIMENT_LOG_FOLDER)
 logging.basicConfig(filename=f'./{EXPERIMENT_LOG_FOLDER}/info.log',level=logging.DEBUG)
 
 
-
 # datasets in the AutoAugment paper:
 # CIFAR-10, CIFAR-100, SVHN, and ImageNet
 # SVHN = http://ufldl.stanford.edu/housenumbers/
-
-
-
-
 
 if hasattr(datasets, args.dataset):
     (Xtr, ytr), (Xts, yts) = getattr(datasets, args.dataset).load_data()
