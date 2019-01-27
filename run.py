@@ -68,8 +68,6 @@ ytr = utils.to_categorical(ytr)
 yts = utils.to_categorical(yts)
 
 
-
-
 # Experiment parameters
 import mycontroller, mychild
 controller = mycontroller.Controller()
@@ -125,7 +123,6 @@ for epoch in range(args.controller_epochs):
             f"./{EXPERIMENT_LOG_FOLDER}/epoch{epoch}.controller_weights.h5",
             overwrite=True
         )
-
 
 logging.info("-")
 logging.info('Best policies found:')
