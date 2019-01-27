@@ -10,11 +10,21 @@ parser.add_argument('--child-batch-size', default=128, type=int)
 parser.add_argument('--report-period', default=20, type=int)
 args = parser.parse_args()
 
-# silence tensorflow annoying logs
+import datetime
+now = datetime.datetime.now()
+EXPERIMENT_NAME = f"{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}"
+# give best policies report for each REPORT_PERIOD epochs of the controller
+REPORT_PERIOD = args.report_period
+best_policy_report = {}
+VALIDATION_SET_SIZE = 1000
+
+
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-# tell tensorflow to not use all resources
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' # silence tensorflow annoying logs
+import pandas as pd
+
 import tensorflow as tf
+# tell tensorflow to not use all resources
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
@@ -24,17 +34,16 @@ backend.set_session(session)
 import numpy as np
 import time
 import pickle
-import datetime
+import logging
+logging.basicConfig(filename=f'./reports/experiment_logs/{EXPERIMENT_NAME}.log',level=logging.DEBUG)
+
 
 # datasets in the AutoAugment paper:
 # CIFAR-10, CIFAR-100, SVHN, and ImageNet
 # SVHN = http://ufldl.stanford.edu/housenumbers/
-now = datetime.datetime.now()
-EXPERIMENT_NAME = f"{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}"
-# give best policies report for each REPORT_PERIOD epochs of the controller
-REPORT_PERIOD = args.report_period
-best_policy_report = {}
-VALIDATION_SET_SIZE = 1000
+
+
+
 
 
 if hasattr(datasets, args.dataset):
@@ -66,38 +75,39 @@ mem_softmaxes = []
 mem_accuracies = []
 
 for epoch in range(args.controller_epochs):
-    print('Controller: Epoch %d / %d' % (epoch+1, args.controller_epochs))
+    logging.info('Controller: Epoch %d / %d' % (epoch+1, args.controller_epochs))
 
     softmaxes, subpolicies = controller.predict(mycontroller.SUBPOLICIES, Xtr)
     for i, subpolicy in enumerate(subpolicies):
-        print('# Sub-policy %d' % (i+1))
-        print(subpolicy)
+        logging.info('# Sub-policy %d' % (i+1))
+        logging.info(subpolicy)
     mem_softmaxes.append(softmaxes)
 
-    print("Creating child model ...")
+    logging.info("Creating child model ...")
     child_model = mychild.create_simple_conv(Xtr.shape[1:])
     child = mychild.Child(child_model, args.child_batch_size, args.child_epochs)
 
-    print("running mycontroller.autoaugment ...")
+    logging.info("running mycontroller.autoaugment ...")
     tic = time.time()
     aug = mycontroller.autoaugment(subpolicies, Xtr, ytr, child.batch_size)
-    print("fitting child model ...")
+    logging.info("fitting child model ...")
     history_child = child.fit(aug, len(Xtr) // child.batch_size, Xts, yts)
     toc = time.time()
 
+    pd.DataFrame(history_child.history).to_csv(f"reports/experiment_logs/{EXPERIMENT_NAME}.epoch{epoch}.csv")
     val_acc_history = history_child.history["val_acc"]
     max_val_acc = round(max(val_acc_history), 3)
 
-    print('-> Child max validation accuracy: %.3f (elaspsed time: %ds)' % (max_val_acc, (toc-tic)))
+    logging.info('-> Child max validation accuracy: %.3f (elaspsed time: %ds)' % (max_val_acc, (toc-tic)))
     mem_accuracies.append(max_val_acc)
 
     if len(mem_softmaxes) > 5:
         # maybe better to let some epochs pass, so that the normalization is more robust
         controller.fit(mem_softmaxes, mem_accuracies)
-    print()
+    logging.info("-")
 
     if epoch%REPORT_PERIOD==0:
-        print ("Writing periodic report ...")
+        logging.info ("Writing periodic report ...")
         epoch_best_policies = []
         for i, subpolicy in enumerate(subpolicies):
             epoch_best_policies.append(str(subpolicy))
@@ -118,10 +128,12 @@ for epoch in range(args.controller_epochs):
         )
 
 
-print()
-print('Best policies found:')
-print()
+logging.info("-")
+logging.info('Best policies found:')
+logging.info("-")
 _, subpolicies = controller.predict(mycontroller.SUBPOLICIES, Xtr)
 for i, subpolicy in enumerate(subpolicies):
-    print('# Subpolicy %d' % (i+1))
+    logging.info('# Subpolicy %d' % (i+1))
+    logging.info(subpolicy)
+    print('# Subpolicy %d' % (i + 1))
     print(subpolicy)
