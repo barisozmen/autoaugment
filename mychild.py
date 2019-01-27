@@ -8,13 +8,14 @@ class Child:
         self.epochs = epochs
 
     def fit(self, gen, nbatches, val_X, val_Y):
-        self.model.fit_generator(
+
+        history = self.model.fit_generator(
             gen, nbatches, self.epochs,
             verbose=2,
             use_multiprocessing=True,
             validation_data=[val_X, val_Y]
         )
-        return self
+        return history
 
     def evaluate(self, X, y):
         return self.model.evaluate(X, y, verbose=2)[1]
