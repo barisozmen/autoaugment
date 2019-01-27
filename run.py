@@ -7,6 +7,7 @@ parser.add_argument('controller_epochs', type=int)
 parser.add_argument('--reduced', action='store_true')
 parser.add_argument('--child-epochs', default=120, type=int)
 parser.add_argument('--child-batch-size', default=128, type=int)
+parser.add_argument('--report-period', default=20, type=int)
 args = parser.parse_args()
 
 # silence tensorflow annoying logs
@@ -31,7 +32,7 @@ import datetime
 now = datetime.datetime.now()
 EXPERIMENT_NAME = f"{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}"
 # give best policies report for each REPORT_PERIOD epochs of the controller
-REPORT_PERIOD = 20
+REPORT_PERIOD = args.report_period
 best_policy_report = {}
 
 if hasattr(datasets, args.dataset):
