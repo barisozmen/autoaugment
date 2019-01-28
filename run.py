@@ -117,6 +117,7 @@ for epoch in range(args.controller_epochs):
     report_file_path = f"./{EXPERIMENT_LOG_FOLDER}/epoch{epoch}.max_val_acc_{max_val_acc_str}.best_policies.csv"
     pd.DataFrame(epoch_best_policies).to_csv(report_file_path, index=False)
 
+    del child
 
     if epoch%REPORT_PERIOD==0:
         controller.model.save_weights(
