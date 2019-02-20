@@ -1,3 +1,8 @@
+Project is forked from github.com/rpmcruz, then improved and some bugs fixed. See commits for improvements: https://github.com/barisozmen/autoaugment-unofficial/commits/master
+
+## Original Readme:
+----
+
 # AutoAugment
 
 My attempt at reproducing the following paper from Google. I have used Keras and TensorFlow.
